@@ -2,6 +2,11 @@ import { Injectable } from '@nestjs/common';
 import * as winston from 'winston';
 import 'winston-daily-rotate-file';
 
+// It helps me monitor application behavior, diagnose errors, track performance,
+// and understand what is happening inside the server at any moment.To implement a
+// reliable and scalable logging system, I use Winston, one of the most popular and
+// powerful logging libraries in Node.js.
+
 @Injectable()
 export class LoggerService {
   private logger: winston.Logger;
