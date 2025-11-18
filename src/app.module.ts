@@ -5,6 +5,7 @@ import { ConfigModule } from '@nestjs/config';
 import { LoggerModule } from './modules/logger/logger.module';
 import { RedisModule } from './modules/redis/redis.module';
 import { SendMailModule } from './modules/send-mail/send-mail.module';
+import { GlobalFilter } from './common/filters/global-exception.filter';
 
 @Module({
   imports: [
@@ -17,6 +18,12 @@ import { SendMailModule } from './modules/send-mail/send-mail.module';
     SendMailModule,
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [
+    AppService,
+    {
+      provide: 'APP_FILTER',
+      useClass: GlobalFilter,
+    },
+  ],
 })
 export class AppModule {}
