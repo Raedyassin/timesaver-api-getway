@@ -32,7 +32,9 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
               this.logger.error('Too many retries on Redis. Giving up.');
               return false; // to stop retrying
             }
-            this.logger.warn(`Redis connection retrying... on attempt(${retries})`);
+            this.logger.warn(
+              `Redis connection retrying... on attempt(${retries})`,
+            );
             return Math.min(retries * 100, 3000); // For every retry, it waits retries * 100 milliseconds
           },
         },
