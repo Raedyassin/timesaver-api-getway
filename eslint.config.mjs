@@ -30,6 +30,8 @@ export default tseslint.config(
       '@typescript-eslint/no-floating-promises': 'warn',
       '@typescript-eslint/no-unsafe-argument': 'warn',
       '@typescript-eslint/no-unsafe-call': 'off',
+      '@typescript-eslint/no-unsafe-assignment': 'off', // to can use .prop with variable from type any
+      '@typescript-eslint/no-unsafe-member-access': 'off', // this to ⬆️
     },
   },
 );

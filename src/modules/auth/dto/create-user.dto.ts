@@ -13,6 +13,7 @@ export class CreateCatDto {
   email: string;
 
   @IsString()
-  @IsNotEmpty({ message: 'Password is required' })
-  password: string;
+  // Remove it because password is not required wiht goole OAuth
+  // @IsNotEmpty({ message: 'Password is required' })
+  password: string | null; // null for google OAuth
 }
