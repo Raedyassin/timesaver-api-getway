@@ -29,6 +29,13 @@ export class AuthService {
     private readonly JwtService: JwtService,
   ) {}
   async register(user: CreateCatDto) {
+    if (
+      user.password == undefined ||
+      user.password == '' ||
+      user.password == null
+    ) {
+      throw new BadRequestException('Password is required');
+    }
     const isUserFound = await this.Userservice.findUserBy({
       email: user.email,
     });
@@ -88,7 +95,6 @@ export class AuthService {
       accessToken,
     };
   }
-
   async resendVerificationCode(
     resendEmailVerificationCodeDto: ResendEmailVerificationCodeDto,
   ) {
@@ -121,7 +127,6 @@ export class AuthService {
         'Email verfication code sent to your email, the code is valid for 10 minutes',
     };
   }
-
   async login(user: LoginUserDto) {
     const isUserFound = await this.Userservice.findUserBy({
       email: user.email,
@@ -136,15 +141,18 @@ export class AuthService {
     if (!isPasswordMatch) {
       throw new BadRequestException('Invalid email or password');
     }
+    // its is just create a token and return it
+    return await this.generateAndReturnJwt(isUserFound);
+  }
+  async generateAndReturnJwt(user: User) {
     const accessToken = await this.generateJwtAccessToken(
-      isUserFound.id.toString(),
-      isUserFound.email,
+      user.id.toString(),
+      user.email,
     );
     return {
       accessToken,
     };
   }
-
   async forgotPassword(email: string) {
     const user = await this.Userservice.findUserBy({ email });
     if (!user) {
@@ -209,5 +217,18 @@ export class AuthService {
     );
     this.logger.info(`User ${email} is logged in successfully`);
     return this.JwtService.signAsync(payload);
+  }
+  async validateGoogleUser(googleUser: CreateCatDto) {
+    const user = await this.Userservice.findUserBy({ email: googleUser.email });
+    // if user already exist then return user
+    if (user) {
+      return user;
+    }
+    // if user not exist then create new user
+    let newUser = new User();
+    newUser.isEmailVerified = true;
+    Object.assign(newUser, googleUser);
+    newUser = await this.Userservice.saveUser(newUser);
+    return newUser;
   }
 }

@@ -1,4 +1,4 @@
-import { Body, Controller, Post } from '@nestjs/common';
+import { Body, Controller, Get, Post, Req, UseGuards } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { CreateCatDto } from './dto/create-user.dto';
 import {
@@ -10,6 +10,7 @@ import {
   ForgotPasswordCodeDto,
   ForgotPasswordDto,
 } from './dto/forgot-password.dto';
+import { GoogleAuthGuard } from 'src/common/guards/google-auth.guard';
 
 @Controller()
 export class AuthController {
@@ -45,5 +46,16 @@ export class AuthController {
   @Post('forgot-password-code')
   forgotPasswordCode(@Body() user: ForgotPasswordCodeDto) {
     return this.authService.forgotPasswordCode(user);
+  }
+
+  @Get('google/login')
+  @UseGuards(GoogleAuthGuard)
+  googleLogin() {}
+
+  // google callback => google after get approve from user will redirect here
+  @Get('google/callback')
+  @UseGuards(GoogleAuthGuard)
+  googleLoginCallback(@Req() req: any) {
+    return this.authService.generateAndReturnJwt(req.user);
   }
 }
