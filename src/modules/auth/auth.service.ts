@@ -197,6 +197,13 @@ export class AuthService {
       accessToken,
     };
   }
+  async logout(userId: string, email: string) {
+    await this.redisService.del(`loginUser:${userId}`);
+    this.logger.info(`User ${email} is logged out successfully`);
+    return {
+      message: 'User logged out successfully',
+    };
+  }
   private async generateJwtAccessToken(
     userId: string,
     email: string,

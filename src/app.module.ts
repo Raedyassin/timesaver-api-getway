@@ -12,6 +12,7 @@ import { AuthModule } from './modules/auth/auth.module';
 import { UserModule } from './modules/user/user.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { JwtModule } from '@nestjs/jwt';
+import { AuthGuard as JwtAuthGuardByMe } from './common/guards/auth.guard';
 // import { DatabaseEventsService } from './services/database-events.service';
 
 @Module({
@@ -76,6 +77,10 @@ import { JwtModule } from '@nestjs/jwt';
     {
       provide: 'APP_GUARD',
       useClass: UserThrottlerGuard,
+    },
+    {
+      provide: 'APP_GUARD',
+      useClass: JwtAuthGuardByMe, //not by passport
     },
   ],
 })
