@@ -13,7 +13,6 @@ import { UserModule } from './modules/user/user.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { JwtModule } from '@nestjs/jwt';
 import { AuthGuard as JwtAuthGuardByMe } from './common/guards/auth.guard';
-// import { DatabaseEventsService } from './services/database-events.service';
 
 @Module({
   imports: [
@@ -68,7 +67,6 @@ import { AuthGuard as JwtAuthGuardByMe } from './common/guards/auth.guard';
   ],
   controllers: [AppController],
   providers: [
-    // DatabaseEventsService,
     AppService,
     {
       provide: 'APP_FILTER',
