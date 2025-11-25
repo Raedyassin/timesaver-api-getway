@@ -13,6 +13,10 @@ import { UserModule } from './modules/user/user.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { JwtModule } from '@nestjs/jwt';
 import { AuthGuard as JwtAuthGuardByMe } from './common/guards/auth.guard';
+import { PlanModule } from './modules/plan/plan.module';
+import { APP_INTERCEPTOR } from '@nestjs/core';
+import { ResponseInterceptor } from './common/interceptors/global-response.interceptor';
+import { UserRoleGuard } from './common/guards/user-role.guard';
 
 @Module({
   imports: [
@@ -64,6 +68,7 @@ import { AuthGuard as JwtAuthGuardByMe } from './common/guards/auth.guard';
     }),
     AuthModule,
     UserModule,
+    PlanModule,
   ],
   controllers: [AppController],
   providers: [
@@ -79,6 +84,14 @@ import { AuthGuard as JwtAuthGuardByMe } from './common/guards/auth.guard';
     {
       provide: 'APP_GUARD',
       useClass: JwtAuthGuardByMe, //not by passport
+    },
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: ResponseInterceptor,
+    },
+    {
+      provide: 'APP_GUARD',
+      useClass: UserRoleGuard,
     },
   ],
 })

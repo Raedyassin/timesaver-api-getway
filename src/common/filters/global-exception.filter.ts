@@ -31,6 +31,7 @@ export class GlobalFilter implements ExceptionFilter {
       // remove the error property to make the error schema is same for all exceptions
       const { error, ...rest } = normalized;
       response.status(status).json({
+        status: 'error',
         statusCode: status,
         ...rest,
       });
@@ -41,6 +42,7 @@ export class GlobalFilter implements ExceptionFilter {
       `${request.method} ${request.url} ${exception?.toString()}`,
     );
     response.status(500).json({
+      status: 'error',
       statusCode: 500,
       message: 'Internal Server Error',
     });

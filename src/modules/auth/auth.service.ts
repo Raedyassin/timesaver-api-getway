@@ -23,7 +23,7 @@ export class AuthService {
   constructor(
     private readonly logger: LoggerService,
     private readonly redisService: RedisService,
-    private readonly Userservice: UserService,
+    private readonly userservice: UserService,
     private readonly configService: ConfigService,
     private readonly SendMailService: SendMailService,
     private readonly JwtService: JwtService,
@@ -36,7 +36,7 @@ export class AuthService {
     ) {
       throw new BadRequestException('Password is required');
     }
-    const isUserFound = await this.Userservice.findUserBy({
+    const isUserFound = await this.userservice.findUserBy({
       email: user.email,
     });
     if (isUserFound) {
@@ -83,7 +83,7 @@ export class AuthService {
     let newUser = new User();
     Object.assign(newUser, user);
     newUser.isEmailVerified = true;
-    newUser = await this.Userservice.saveUser(newUser);
+    newUser = await this.userservice.saveUser(newUser);
     await this.redisService.del(`newUser:${emailVerficationCode.email}`);
     this.logger.info(`New user ${user.email} is Created successfully`);
     const accessToken = await this.generateJwtAccessToken(
@@ -92,7 +92,9 @@ export class AuthService {
     );
     return {
       message: 'Email verfication code is valid',
-      accessToken,
+      data: {
+        accessToken,
+      },
     };
   }
   async resendVerificationCode(
@@ -128,7 +130,7 @@ export class AuthService {
     };
   }
   async login(user: LoginUserDto) {
-    const isUserFound = await this.Userservice.findUserBy({
+    const isUserFound = await this.userservice.findUserBy({
       email: user.email,
     });
     if (!isUserFound) {
@@ -150,11 +152,13 @@ export class AuthService {
       user.email,
     );
     return {
-      accessToken,
+      data: {
+        accessToken,
+      },
     };
   }
   async forgotPassword(email: string) {
-    const user = await this.Userservice.findUserBy({ email });
+    const user = await this.userservice.findUserBy({ email });
     if (!user) {
       throw new BadRequestException('User not found');
     }
@@ -194,14 +198,16 @@ export class AuthService {
     );
     return {
       message: 'Forgot password code is valid',
-      accessToken,
+      data: {
+        accessToken,
+      },
     };
   }
   async logout(userId: string, email: string) {
     await this.redisService.del(`loginUser:${userId}`);
     this.logger.info(`User ${email} is logged out successfully`);
     return {
-      message: 'User logged out successfully',
+      message: 'logged out successfully',
     };
   }
   private async generateJwtAccessToken(
@@ -222,11 +228,17 @@ export class AuthService {
       sessionId,
       parseInt(this.configService.getOrThrow<string>('JWT_EXPIRATION')),
     );
-    this.logger.info(`User ${email} is logged in successfully`);
+    this.logger.info(`User ${email} logged in successfully`);
     return this.JwtService.signAsync(payload);
   }
-  async validateGoogleUser(googleUser: CreateCatDto) {
-    const user = await this.Userservice.findUserBy({ email: googleUser.email });
+  async validateGoogleUser(googleUser: CreateCatDto): Promise<User> {
+    console.log(googleUser);
+    console.log(' email', googleUser.email);
+    // add it for testing
+    const user = await this.userservice.findOne({
+      email: googleUser.email,
+    });
+    console.log(' user', user);
     // if user already exist then return user
     if (user) {
       return user;
@@ -235,7 +247,7 @@ export class AuthService {
     let newUser = new User();
     newUser.isEmailVerified = true;
     Object.assign(newUser, googleUser);
-    newUser = await this.Userservice.saveUser(newUser);
+    newUser = await this.userservice.saveUser(newUser);
     return newUser;
   }
 }

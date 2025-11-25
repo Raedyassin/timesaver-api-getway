@@ -14,6 +14,10 @@ export class UserService {
     return this.usersRepository.findOneBy(query);
   }
 
+  findOne(query: Record<string, any>): Promise<User | null> {
+    return this.usersRepository.findOne({ where: { ...query } });
+  }
+
   saveUser(user: User): Promise<User> {
     return this.usersRepository.save(user);
   }
