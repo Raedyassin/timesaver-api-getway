@@ -3,11 +3,18 @@ import { AppModule } from './app.module';
 import { LoggerService } from './modules/logger/logger.service';
 import { ValidationPipe } from '@nestjs/common';
 import { DataSource } from 'typeorm';
+import { raw } from 'express';
+// import * as bodyParser from 'body-parser';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   app.setGlobalPrefix('api/v1');
   const logger = app.get(LoggerService);
+
+  // for stripe webhook run correctly
+  // app.use('/payments/webhook', bodyParser.raw({ type: 'application/json' }));
+  // Because Stripe requires the raw body, not JSON parsed.
+  app.use('/api/v1/payment/webhook', raw({ type: 'application/json' }));
 
   app.useGlobalPipes(
     new ValidationPipe({

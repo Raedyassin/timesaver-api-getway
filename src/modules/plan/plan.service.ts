@@ -126,4 +126,15 @@ export class PlanService {
       },
     };
   }
+
+  // ************ for internal work ************
+  async findPlanById(planId: string) {
+    const plan = await this.planRepository.findOneBy({
+      id: planId,
+    });
+    if (!plan) {
+      throw new BadRequestException('Plan not found');
+    }
+    return plan;
+  }
 }
