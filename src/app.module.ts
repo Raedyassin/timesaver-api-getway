@@ -19,6 +19,7 @@ import { ResponseInterceptor } from './common/interceptors/global-response.inter
 import { UserRoleGuard } from './common/guards/user-role.guard';
 import { SubscriptionModule } from './modules/subscription/subscription.module';
 import { PaymentModule } from './payment/payment.module';
+import { AiModule } from './modules/ai/ai.module';
 
 @Module({
   imports: [
@@ -73,6 +74,7 @@ import { PaymentModule } from './payment/payment.module';
     PlanModule,
     SubscriptionModule,
     PaymentModule,
+    AiModule,
   ],
   controllers: [AppController],
   providers: [
