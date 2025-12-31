@@ -1,9 +1,13 @@
 import { BaseEntityProps } from 'src/common/entities/base.ent';
 import { Roles } from 'src/common/enums/role.enum';
-import { Entity, Column } from 'typeorm';
+import { Subscription } from 'src/modules/subscription/entities/subscription.entity';
+import { Entity, Column, OneToMany } from 'typeorm';
 
 @Entity('users')
 export class User extends BaseEntityProps {
+  @OneToMany(() => Subscription, (subscription) => subscription.user)
+  subscription: Subscription[];
+
   @Column({ nullable: true })
   password: string;
 

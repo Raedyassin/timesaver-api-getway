@@ -17,6 +17,8 @@ import { PlanModule } from './modules/plan/plan.module';
 import { APP_INTERCEPTOR } from '@nestjs/core';
 import { ResponseInterceptor } from './common/interceptors/global-response.interceptor';
 import { UserRoleGuard } from './common/guards/user-role.guard';
+import { SubscriptionModule } from './modules/subscription/subscription.module';
+import { PaymentModule } from './payment/payment.module';
 
 @Module({
   imports: [
@@ -69,6 +71,8 @@ import { UserRoleGuard } from './common/guards/user-role.guard';
     AuthModule,
     UserModule,
     PlanModule,
+    SubscriptionModule,
+    PaymentModule,
   ],
   controllers: [AppController],
   providers: [

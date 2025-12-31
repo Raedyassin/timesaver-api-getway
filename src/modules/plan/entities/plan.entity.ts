@@ -1,8 +1,12 @@
 import { BaseEntityProps } from 'src/common/entities/base.ent';
-import { Column, Entity } from 'typeorm';
+import { Subscription } from 'src/modules/subscription/entities/subscription.entity';
+import { Column, Entity, OneToMany } from 'typeorm';
 
 @Entity('plans')
 export class Plan extends BaseEntityProps {
+  @OneToMany(() => Subscription, (subscription) => subscription.plan)
+  subscription: Subscription[];
+
   @Column('varchar')
   name: string;
 
