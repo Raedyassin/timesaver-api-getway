@@ -50,9 +50,9 @@ export class AiService {
       videoChatSession.transcript = videoSummary.transcript;
       videoChatSession =
         await this.videoChatSessionRepository.save(videoChatSession);
-
+      console.log('videoChatSession', videoChatSession);
       // process transcript with RAG
-      await this.ragService.proccessVideoTranscript(
+      await this.ragService.processVideoTranscript(
         videoChatSession.id,
         videoSummary.transcript as string,
       );
@@ -65,6 +65,7 @@ export class AiService {
         },
       };
     } catch (error) {
+      console.log('error', error);
       if (error.response.status === 422) {
         throw new HttpException(
           'Invalid YouTube URL. Please provide a valid YouTube URL.',
