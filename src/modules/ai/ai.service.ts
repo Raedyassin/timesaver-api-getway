@@ -1,36 +1,91 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, HttpException, Injectable } from '@nestjs/common';
 import { HttpService } from '@nestjs/axios';
 import { firstValueFrom } from 'rxjs'; // Helper to convert Observable to Promise
+import { RagService } from './services/Rag.service';
+import { LoggerService } from '../logger/logger.service';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { VideoChatSession } from './entities/video-chat-session.entity';
 
 @Injectable()
 export class AiService {
-  constructor(private readonly httpService: HttpService) {}
+  constructor(
+    private readonly httpService: HttpService,
+    private readonly ragService: RagService,
+    private readonly logger: LoggerService,
+    @InjectRepository(VideoChatSession)
+    private readonly videoChatSessionRepository: Repository<VideoChatSession>,
+  ) {}
 
-  /**
-   * Calls the Python FastAPI endpoint to get a summary.
-   */
-  async getSummary(): Promise<any> {
-    // We don't need to add headers here! They are auto-added by the Module.
+  async getSummary(youtubeUrl: string): Promise<any> {
+    /**
+     * Calls the Python FastAPI endpoint to get a summary.
+     */
     try {
       const response = await firstValueFrom(
-        this.httpService.post('/summary', {}),
+        this.httpService.post('/ai/summary', { youtubeUrl }),
+      );
+      /**
+       * the success response
+       *  video_metadata=metadata,
+          summary=summary,
+          transcript=transcript_text, 
+          transcript_available=bool
+       */
+      const videoSummary = response.data;
+      if (!videoSummary.transcript_available) {
+        throw new BadRequestException(
+          'Could not generate summary because transcript is unavailable.',
+        );
+      }
+      // store video in database for create a session for user
+      let videoChatSession = new VideoChatSession();
+      videoChatSession.title = videoSummary.video_metadata.title;
+      videoChatSession.uploader = videoSummary.video_metadata.uploader;
+      videoChatSession.uploadDate = videoSummary.video_metadata.upload_date;
+      videoChatSession.duration = videoSummary.video_metadata.duration;
+      videoChatSession.thumbnail = videoSummary.video_metadata.thumbnail;
+      videoChatSession.webpageUrl = videoSummary.video_metadata.webpage_url;
+      videoChatSession.summary = videoSummary.summary;
+      videoChatSession.transcript = videoSummary.transcript;
+      videoChatSession =
+        await this.videoChatSessionRepository.save(videoChatSession);
+
+      // process transcript with RAG
+      await this.ragService.proccessVideoTranscript(
+        videoChatSession.id,
+        videoSummary.transcript as string,
       );
 
-      return response.data; // Return the JSON data from Python
+      return {
+        data: {
+          videoMetadata: videoSummary.video_metadata,
+          summary: videoSummary.summary,
+          sessionId: videoChatSession.id,
+        },
+      };
     } catch (error) {
-      // Handle errors (e.g., Python server down or 403 Forbidden)
-      console.error('Error calling AI Service:', error.message);
-      throw new Error('Failed to process video with AI');
+      if (error.response.status === 422) {
+        throw new HttpException(
+          'Invalid YouTube URL. Please provide a valid YouTube URL.',
+          422,
+        );
+      }
+      if (error.response.status === 400) {
+        throw new BadRequestException('Video unavailable or restricted.');
+      }
+      this.logger.error('Error calling AI Service:', String(error));
+      throw error;
     }
   }
 
-  /**
-   * Calls the Python FastAPI endpoint for Q/A
-   */
-  async askQuestion(): Promise<any> {
+  async askQuestion(question: string): Promise<any> {
+    /**
+     * Calls the Python FastAPI endpoint for Q/A
+     */
     try {
       const response = await firstValueFrom(
-        this.httpService.post('/ask-question', {}),
+        this.httpService.post('/ai/ask-question', { question }),
       );
       return response.data;
     } catch {

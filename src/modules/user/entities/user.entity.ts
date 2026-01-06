@@ -1,5 +1,6 @@
-import { BaseEntityProps } from 'src/common/entities/base.ent';
+import { BaseEntityProps } from 'src/common/entities/base.entity';
 import { Roles } from 'src/common/enums/role.enum';
+import { VideoChatSession } from 'src/modules/ai/entities/video-chat-session.entity';
 import { Subscription } from 'src/modules/subscription/entities/subscription.entity';
 import { Entity, Column, OneToMany } from 'typeorm';
 
@@ -22,4 +23,7 @@ export class User extends BaseEntityProps {
 
   @Column({ default: false, type: 'boolean', name: 'is_email_verified' })
   isEmailVerified: boolean;
+
+  @OneToMany(() => VideoChatSession, (video) => video.user)
+  videos: VideoChatSession[]; // User has many videos
 }

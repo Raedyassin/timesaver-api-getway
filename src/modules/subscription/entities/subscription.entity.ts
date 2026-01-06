@@ -1,4 +1,4 @@
-import { BaseEntityProps } from 'src/common/entities/base.ent';
+import { BaseEntityProps } from 'src/common/entities/base.entity';
 import {
   SubScriptionStatus,
   SubscriptionType,

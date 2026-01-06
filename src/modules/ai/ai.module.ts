@@ -3,9 +3,16 @@ import { AiService } from './ai.service';
 import { AiController } from './ai.controller';
 import { HttpModule } from '@nestjs/axios';
 import { ConfigService } from '@nestjs/config';
+import { RagService } from './services/Rag.service';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { ChatMessage } from './entities/chat-message.entity';
+import { VideoChatSession } from './entities/video-chat-session.entity';
+import { EmbeddingModelService } from './services/embedding.service';
+import { VectorDBService } from './services/vector-db.service';
 
 @Module({
   imports: [
+    TypeOrmModule.forFeature([ChatMessage, VideoChatSession]),
     HttpModule.registerAsync({
       inject: [ConfigService],
       useFactory: (configService: ConfigService) => ({
@@ -32,6 +39,6 @@ import { ConfigService } from '@nestjs/config';
     }),
   ],
   controllers: [AiController],
-  providers: [AiService],
+  providers: [AiService, EmbeddingModelService, RagService, VectorDBService],
 })
 export class AiModule {}
