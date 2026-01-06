@@ -94,8 +94,7 @@ export class RagService {
     chunks: string[],
     startIndex: number,
   ) {
-    const embeddings =
-      await this.embeddingModelService.generateArrayEmbeddings(chunks);
+    const embeddings = await this.embedingArrayOfChunks(chunks);
     const vectors = embeddings.map((embedding, i) => ({
       id: `${sessionId}-chunk-${startIndex + i}`,
       text: chunks[i],
