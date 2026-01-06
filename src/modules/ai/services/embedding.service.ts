@@ -6,7 +6,7 @@ import { LoggerService } from 'src/modules/logger/logger.service';
 @Injectable()
 export class EmbeddingModelService implements OnModuleInit {
   private ai: GoogleGenAI;
-  private readonly embeddingModel = 'gemini-embedding-001'; // or 'text-embedding-004'
+  private readonly embeddingModel = 'text-embedding-004'; //'gemini-embedding-001' or 'text-embedding-004'
   constructor(
     private configService: ConfigService,
     private readonly logger: LoggerService,

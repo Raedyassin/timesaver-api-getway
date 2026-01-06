@@ -13,15 +13,29 @@ export class VectorDBService implements OnModuleInit {
     private readonly logger: LoggerService,
   ) {}
 
-  onModuleInit() {
+  async onModuleInit() {
     const apiKey = this.configService.getOrThrow<string>('PINECONE_API_KEY');
+    // 1. Initialize Client
+    this.pinecone = new Pinecone({ apiKey });
+
+    // 2. Connect to the specific index you created in dashboard
     const indexName = this.configService.getOrThrow<string>(
       'PINECONE_INDEX_NAME',
     );
-
-    // 1. Initialize Client
-    this.pinecone = new Pinecone({ apiKey });
-    // 2. Connect to the specific index you created in dashboard
+    const existing = await this.pinecone.listIndexes();
+    if (!existing.indexes?.some((i) => i.name === indexName)) {
+      await this.pinecone.createIndex({
+        name: indexName,
+        dimension: 768,
+        metric: 'cosine',
+        spec: {
+          serverless: {
+            cloud: 'aws',
+            region: 'us-east-1',
+          },
+        },
+      });
+    }
     this.index = this.pinecone.index(indexName);
     this.logger.info('✅ Pinecone Service connected');
   }
