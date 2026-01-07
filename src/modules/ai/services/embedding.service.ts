@@ -17,6 +17,11 @@ export class EmbeddingModelService implements OnModuleInit {
     this.ai = new GoogleGenAI({ apiKey });
   }
 
+  /**
+   * to knew what happen if i embed some of chunk in specific language
+   * are if i embed in antoher langue are teh comparison between them
+   * will be occure or what see the file embedding-language.md in the same folder
+   */
   async generateEmbedding(text: string): Promise<number[]> {
     try {
       const response = await this.ai.models.embedContent({

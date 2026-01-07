@@ -25,5 +25,5 @@ export class User extends BaseEntityProps {
   isEmailVerified: boolean;
 
   @OneToMany(() => VideoChatSession, (video) => video.user)
-  videos: VideoChatSession[]; // User has many videos
+  videoChatSessions: VideoChatSession[]; // User has many videos
 }

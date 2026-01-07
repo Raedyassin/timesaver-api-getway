@@ -4,8 +4,10 @@ import {
   PrimaryGeneratedColumn,
   ManyToOne,
   CreateDateColumn,
+  JoinColumn,
 } from 'typeorm';
 import { VideoChatSession } from './video-chat-session.entity';
+import { MessageType } from 'src/common/enums/message-type.enum';
 
 /**
  * Explanation:
@@ -15,11 +17,23 @@ import { VideoChatSession } from './video-chat-session.entity';
  */
 @Entity('chat_messages')
 export class ChatMessage {
-  @ManyToOne(() => VideoChatSession)
+  // ✅ ADD THIS: Explicit Foreign Key Column
+  // This makes your query `where: { videoChatSessionId }` work perfectly.
+  @Column()
+  videoChatSessionId: string;
+
+  // @ManyToOne(() => VideoChatSession)
+  // videoChatSession: VideoChatSession;
+  @ManyToOne(() => VideoChatSession, (session) => session.messages, {
+    // ✅ ADD THIS: If Session is deleted, delete messages too
+    onDelete: 'CASCADE',
+  })
+  // Connect the column explicitly
+  @JoinColumn({ name: 'videoChatSessionId' })
   videoChatSession: VideoChatSession;
 
-  @Column({ type: 'enum', enum: ['user', 'ai'] })
-  role: 'user' | 'ai';
+  @Column({ type: 'enum', enum: MessageType })
+  role: MessageType;
 
   @Column('text')
   content: string;

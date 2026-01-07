@@ -14,7 +14,7 @@ export class VideoChatSession {
   @PrimaryGeneratedColumn('uuid')
   id: string; // THIS IS THE SESSION ID
 
-  @ManyToOne(() => User, (user) => user.videos)
+  @ManyToOne(() => User, (user) => user.videoChatSessions)
   user: User;
 
   // video meta_data

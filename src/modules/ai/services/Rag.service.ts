@@ -23,11 +23,15 @@ export class RagService {
 
   // The pinconeService code
   private async getRelevantChunksFromDB(
-    videoId: string,
+    videoChatSessionId: string,
     questionEmbedding: number[],
     top = 4,
   ) {
-    return this.vectorDBService.searchChunks(videoId, questionEmbedding, top);
+    return this.vectorDBService.searchChunks(
+      videoChatSessionId,
+      questionEmbedding,
+      top,
+    );
   }
 
   private async insertChunkIntoDB(
@@ -44,8 +48,6 @@ export class RagService {
   ) {
     await this.vectorDBService.upsertBatch(sessionId, vectors);
   }
-
-  // ************************ pulbic methods ************************
 
   private *chunkTranscript(transcript: string): Generator<string> {
     const chunkSize = 1000; // by char mean 1000 chars ~200 words
@@ -70,6 +72,26 @@ export class RagService {
     }
   }
 
+  private async embedAndStoreBatch(
+    sessionId: string,
+    chunks: string[],
+    startIndex: number,
+  ) {
+    const embeddings = await this.embedingArrayOfChunks(chunks);
+    const vectors = embeddings.map((embedding, i) => ({
+      id: `${sessionId}-chunk-${startIndex + i}`,
+      text: chunks[i],
+      embedding,
+    }));
+
+    await this.insertChunkArrayIntoDB(sessionId, vectors);
+
+    // explicit cleanup
+    embeddings.length = 0;
+    vectors.length = 0;
+  }
+
+  // ************************ pulbic methods ************************
   async processVideoTranscript(sessionId: string, transcript: string) {
     const BATCH_SIZE = 10;
     const batch: string[] = [];
@@ -89,22 +111,13 @@ export class RagService {
       await this.embedAndStoreBatch(sessionId, batch, chunkIndex);
     }
   }
-  private async embedAndStoreBatch(
-    sessionId: string,
-    chunks: string[],
-    startIndex: number,
-  ) {
-    const embeddings = await this.embedingArrayOfChunks(chunks);
-    const vectors = embeddings.map((embedding, i) => ({
-      id: `${sessionId}-chunk-${startIndex + i}`,
-      text: chunks[i],
-      embedding,
-    }));
-
-    await this.insertChunkArrayIntoDB(sessionId, vectors);
-
-    // explicit cleanup
-    embeddings.length = 0;
-    vectors.length = 0;
+  async processUserQuestion(videoChatSessionId: string, userQuestion: string) {
+    const questionEmbedding = await this.embedQuestion(userQuestion);
+    const relevantChunks = await this.getRelevantChunksFromDB(
+      videoChatSessionId,
+      questionEmbedding,
+      4,
+    );
+    return relevantChunks;
   }
 }

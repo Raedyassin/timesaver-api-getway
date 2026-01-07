@@ -96,7 +96,7 @@ export class VectorDBService implements OnModuleInit {
   async searchChunks(
     sessionId: string,
     questionEmbedding: number[],
-    topK: number = 6,
+    topK: number = 4,
   ): Promise<string[]> {
     const queryResponse = await this.index.namespace(sessionId).query({
       vector: questionEmbedding,
