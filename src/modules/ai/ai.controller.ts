@@ -11,7 +11,7 @@ export class AiController {
 
   @Post('summary')
   summary(@Body() body: URLDto, @GetUser() user: User) {
-    return this.aiService.getSummary(body.youtubeUrl, user.id.toString());
+    return this.aiService.getSummary(body, user.id.toString());
   }
 
   @Post('ask-question')

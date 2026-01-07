@@ -40,6 +40,9 @@ export class VideoChatSession {
   @Column({ type: 'text', nullable: true })
   summary: string;
 
+  @Column({ type: 'text', nullable: true, name: 'summary_instruction' })
+  summaryInstruction: string;
+
   @Column({ type: 'text', nullable: true })
   transcript: string;
 

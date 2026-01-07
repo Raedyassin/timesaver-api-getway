@@ -16,6 +16,7 @@ import { QuestionDto } from './dto/question';
 import { ChatMessage } from './entities/chat-message.entity';
 import { MessageType } from 'src/common/enums/message-type.enum';
 import { RedisService } from '../redis/redis.service';
+import { URLDto } from './dto/url';
 @Injectable()
 export class AiService {
   constructor(
@@ -29,13 +30,16 @@ export class AiService {
     private readonly chatMessageRepository: Repository<ChatMessage>,
   ) {}
 
-  async getSummary(youtubeUrl: string, userId: string): Promise<any> {
+  async getSummary(request: URLDto, userId: string): Promise<any> {
     /**
      * Calls the Python FastAPI endpoint to get a summary.
      */
     try {
       const response = await firstValueFrom(
-        this.httpService.post('/ai/summary', { youtubeUrl }),
+        this.httpService.post('/ai/summary', {
+          youtube_url: request.youtubeUrl,
+          summary_instruction: request.summaryInstruction,
+        }),
       );
       /**
        * the success response
@@ -60,6 +64,7 @@ export class AiService {
       videoChatSession.webpageUrl = videoSummary.video_metadata.webpage_url;
       videoChatSession.summary = videoSummary.summary;
       videoChatSession.transcript = videoSummary.transcript;
+      videoChatSession.summaryInstruction = request.summaryInstruction;
       videoChatSession.user = { id: userId } as User;
       videoChatSession =
         await this.videoChatSessionRepository.save(videoChatSession);

@@ -1,4 +1,10 @@
-import { IsString, IsNotEmpty, IsUrl, Matches } from 'class-validator';
+import {
+  IsString,
+  IsNotEmpty,
+  IsUrl,
+  Matches,
+  IsOptional,
+} from 'class-validator';
 
 export class URLDto {
   @IsString()
@@ -13,4 +19,9 @@ export class URLDto {
     message: 'URL must be a valid YouTube link',
   })
   youtubeUrl: string;
+
+  @IsOptional()
+  @IsString()
+  @IsNotEmpty()
+  summaryInstruction: string;
 }
