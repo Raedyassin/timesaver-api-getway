@@ -17,6 +17,7 @@ import { ChatMessage } from './entities/chat-message.entity';
 import { MessageType } from 'src/common/enums/message-type.enum';
 import { RedisService } from '../redis/redis.service';
 import { URLDto } from './dto/url';
+import { HistoryQueryDto } from './dto/history-query.dto';
 @Injectable()
 export class AiService {
   constructor(
@@ -171,6 +172,53 @@ export class AiService {
       }
       throw new Error('Error calling ask-question AI Service:' + String(error));
     }
+  }
+
+  async getHistory(userId: string, query: HistoryQueryDto) {
+    let videoChatSessions = await this.videoChatSessionRepository.find({
+      where: { user: { id: userId } },
+      order: { createdAt: 'DESC' },
+      select: [
+        'id',
+        'title',
+        'thumbnail',
+        'createdAt',
+        'title',
+        'duration',
+        'summaryInstruction',
+        'uploadDate',
+        'uploader',
+        'webpageUrl',
+        'summary',
+      ],
+      skip: (query.page - 1) * query.limit,
+      take: query.limit + 1,
+    });
+    if (videoChatSessions.length > query.limit) {
+      videoChatSessions = videoChatSessions.slice(0, query.limit + 1);
+    }
+    return {
+      data: {
+        history: videoChatSessions,
+      },
+      meta: {
+        hasMore: videoChatSessions.length > query.limit,
+        page: query.page,
+        limit: query.limit,
+      },
+    };
+  }
+  async getChatHistory(videoChatSessionId: string, userId: string) {
+    await this.getVideoChatSession(videoChatSessionId, userId);
+    const chatHistory = await this.chatMessageRepository.find({
+      where: { videoChatSessionId },
+      order: { createdAt: 'ASC' },
+    });
+    return {
+      data: {
+        chatHistory,
+      },
+    };
   }
 
   private async getVideoChatSession(
