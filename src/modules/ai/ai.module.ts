@@ -9,6 +9,7 @@ import { ChatMessage } from './entities/chat-message.entity';
 import { VideoChatSession } from './entities/video-chat-session.entity';
 import { EmbeddingModelService } from './services/embedding.service';
 import { VectorDBService } from './services/vector-db.service';
+import { ModelUsageFactory } from './services/model-factory.service';
 
 @Module({
   imports: [
@@ -39,6 +40,12 @@ import { VectorDBService } from './services/vector-db.service';
     }),
   ],
   controllers: [AiController],
-  providers: [AiService, EmbeddingModelService, RagService, VectorDBService],
+  providers: [
+    AiService,
+    EmbeddingModelService,
+    RagService,
+    VectorDBService,
+    ModelUsageFactory,
+  ],
 })
 export class AiModule {}

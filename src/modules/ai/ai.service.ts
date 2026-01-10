@@ -18,6 +18,7 @@ import { MessageType } from 'src/common/enums/message-type.enum';
 import { RedisService } from '../redis/redis.service';
 import { URLDto } from './dto/url';
 import { HistoryQueryDto } from './dto/history-query.dto';
+import { ModelUsageFactory } from './services/model-factory.service';
 @Injectable()
 export class AiService {
   constructor(
@@ -29,6 +30,7 @@ export class AiService {
     private readonly videoChatSessionRepository: Repository<VideoChatSession>,
     @InjectRepository(ChatMessage)
     private readonly chatMessageRepository: Repository<ChatMessage>,
+    private modelUsageFactory: ModelUsageFactory,
   ) {}
 
   async getSummary(request: URLDto, userId: string): Promise<any> {
@@ -48,6 +50,9 @@ export class AiService {
           summary=summary,
           transcript=transcript_text, 
           transcript_available=bool
+          input_tokens=input_tokens
+          output_tokens=output_tokens
+          llm_model=model_name
        */
       const videoSummary = response.data;
       if (!videoSummary.transcript_available) {
@@ -55,6 +60,11 @@ export class AiService {
           'Could not generate summary because transcript is unavailable.',
         );
       }
+      console.log(videoSummary);
+      // get model usage
+      const agentStrategy = this.modelUsageFactory.getStrategy(
+        videoSummary.llm_model as string,
+      );
       // store video in database for create a session for user
       let videoChatSession = new VideoChatSession();
       videoChatSession.title = videoSummary.video_metadata.title;
@@ -111,7 +121,7 @@ export class AiService {
     const { chatId: videoChatSessionId, question: userQuestion } = question;
 
     // check if videoChatSessionId is valid and if this caht for the his owner
-    await this.getVideoChatSession(videoChatSessionId, userId);
+    await this.checkVideoChatSessionForUser(videoChatSessionId, userId);
     const lastFiveMessages = await this.chatMessageRepository.find({
       where: {
         videoChatSessionId,
@@ -209,7 +219,7 @@ export class AiService {
     };
   }
   async getChatHistory(videoChatSessionId: string, userId: string) {
-    await this.getVideoChatSession(videoChatSessionId, userId);
+    await this.checkVideoChatSessionForUser(videoChatSessionId, userId);
     const chatHistory = await this.chatMessageRepository.find({
       where: { videoChatSessionId },
       order: { createdAt: 'ASC' },
@@ -221,7 +231,7 @@ export class AiService {
     };
   }
 
-  private async getVideoChatSession(
+  private async checkVideoChatSessionForUser(
     videoChatSessionId: string,
     userId: string,
   ): Promise<void> {
@@ -273,3 +283,23 @@ export class AiService {
     return await this.chatMessageRepository.save(chatMessage);
   }
 }
+// 1. System Improvements & Code Review
+// Your code is generally good, but there is one major bottleneck that will kill your VPS performance if you don't fix it.
+
+// The Problem: "Blocking Architecture"
+// Currently, NestJS calls FastAPI using this.httpService.post(...). This is a Synchronous call in the context of the HTTP connection.
+
+// User clicks "Summary" -> NestJS waits -> FastAPI waits (20s) -> User gets response.
+// While NestJS waits, it is holding open a connection and potentially occupying a worker thread.
+// The Improvement: "Job Queue Pattern"
+// To handle "1000 users," you cannot make users wait for the AI to finish. You must use Redis as a Queue (e.g., BullMQ).
+
+// Workflow Change:
+
+// NestJS: Receives request -> Pushes job to Redis (summary-job) -> Returns "202 Accepted" (Job ID) to Frontend.
+// FastAPI: Has a background worker running. It pulls the job from Redis, processes the AI, and saves the result to DB.
+// Frontend: Polls NestJS GET /status/{job_id} every 2 seconds.
+// Why this matters:
+
+// Capacity: Allows NestJS to handle 100 requests/second instantly (just putting them in line).
+// Stability: If FastAPI crashes, the jobs stay in Redis and process when it restarts.
