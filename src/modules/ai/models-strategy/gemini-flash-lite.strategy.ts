@@ -1,4 +1,4 @@
-// gemini-flash-lite.strategy.ts
+// gemini-2.5-flash-lite.strategy.ts
 import { LlmModels } from 'src/common/enums/llm-models.enum';
 import {
   IModelStrategy,
@@ -13,19 +13,30 @@ export class Gemini25FlashLiteStrategy implements IModelStrategy {
     inputPricePerM: 0.1, // $0.10 per 1M tokens (text / image / video)
     outputPricePerM: 0.4, // $0.40 per 1M tokens
   };
+  readonly INPUT_TOKENS_PER_CREDIT = 1000; // this cost $0.0001 per credit
+  readonly OUTPUT_TOKENS_PER_CREDIT = 250; // Output is 4x more expensive than input
 
   calculateCost(usageTokens: UsageTokens): UsageReport {
-    const inputCost = Math.ceil(
-      (usageTokens.inputTokens / 1_000_000) * this.pricing.inputPricePerM,
-    );
-    const outputCost = Math.ceil(
-      (usageTokens.outputTokens / 1_000_000) * this.pricing.outputPricePerM,
-    );
+    const { inputTokens, outputTokens } = usageTokens;
+
+    // 1. Calculate USD Cost (Internal)
+    // const inputCost = (inputTokens / 1_000_000) * this.pricing.inputPricePerM;
+    // const outputCost =
+    //   (outputTokens / 1_000_000) * this.pricing.outputPricePerM;
+    // const totalCostUsd = inputCost + outputCost;
+
+    // 2. Calculate Credits (Weighted)
+    const inputCredits = inputTokens / this.INPUT_TOKENS_PER_CREDIT;
+    const outputCredits = outputTokens / this.OUTPUT_TOKENS_PER_CREDIT;
+
+    // Sum them up and Round Up
+    const totalCredits = inputCredits + outputCredits;
 
     return {
-      modelName: this.modelName,
-      usageTokens,
-      costUsd: Number((inputCost + outputCost).toFixed(6)),
+      // modelName: this.modelName,
+      // usageTokens,
+      // costUsd: Number(totalCostUsd.toFixed(6)),
+      creditsUsed: Number(totalCredits.toFixed(1)),
     };
   }
 }

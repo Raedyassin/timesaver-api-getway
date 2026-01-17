@@ -12,12 +12,12 @@ export class AiController {
 
   @Post('summary')
   summary(@Body() body: URLDto, @GetUser() user: User) {
-    return this.aiService.getSummary(body, user.id.toString());
+    return this.aiService.getSummary(body, user);
   }
 
   @Post('ask-question')
   qa(@Body() body: QuestionDto, @GetUser() user: User) {
-    return this.aiService.askQuestion(body, user.id.toString());
+    return this.aiService.askQuestion(body, user);
   }
 
   @Get('history')

@@ -13,14 +13,8 @@ export class Plan extends BaseEntityProps {
   @Column({ type: 'float', name: 'monthly_price' })
   monthlyPrice: number;
 
-  @Column({ type: 'float', name: 'monthly_discount' })
-  monthlyDiscount: number;
-
   @Column({ type: 'float', name: 'yearly_price' })
   yearlyPrice: number;
-
-  @Column({ type: 'float', name: 'yearly_discount' })
-  yearlyDiscount: number;
 
   @Column('varchar')
   description: string;
@@ -32,28 +26,10 @@ export class Plan extends BaseEntityProps {
   @Column({ type: 'int', default: 0, name: 'credits_per_month' })
   creditsPerMonth: number;
 
-  // add it in the future
-  // @Column({ type: 'array', nullable: true })
-  // aiModel?: string[]; // 'standard' | 'advanced'
-
-  // potential columns for make them in sperate class then extend this class
-  // but the only plan how is just use theme until now (createdBy, updatedBy)
-  @Column({ type: 'uuid', nullable: true })
+  // the createdBy and updatedBy are the user ids for more information
+  @Column({ type: 'uuid', nullable: false })
   createdBy: string;
 
-  @Column({ type: 'uuid', nullable: true })
+  @Column({ type: 'uuid', nullable: false })
   updatedBy: string;
-  /**
-   * why don't use relationships? between plan and user for createdBy and updatedBy?
-   * 
-   * Audit history shouldn’t break if user is deleted (he will not be deleted because we are using soft delete)
-      - If the User is removed, the plan still exists.
-      - If you had a foreign key with CASCADE, the plan row could be deleted accidentally.
-   * Performance
-      - No join needed to write a plan → insert is faster.
-      - High-traffic systems avoid unnecessary relations for logging/audit fields.
-   * Simplicity
-      - You only need the ID for most auditing/logging purposes.
-      - Can still join later if needed manually
-   */
 }

@@ -114,8 +114,8 @@ export class StripePaymentService {
         subscripe.plan = plan.planId;
         subscripe.subscriptionType = plan.subscriptionType;
         const now = new Date();
-        subscripe.endDate = new Date(now);
-        subscripe.endDate.setMonth(
+        subscripe.nextBillingDate = new Date(now);
+        subscripe.nextBillingDate.setMonth(
           now.getMonth() +
             (plan.subscriptionType === SubscriptionType.MONTHLY ? 1 : 12),
         );
@@ -156,10 +156,10 @@ export class StripePaymentService {
     let discount: number = 0;
     if (checkoutDo.subscriptionType === SubscriptionType.MONTHLY) {
       price = plan.monthlyPrice;
-      discount = plan.monthlyDiscount;
+      // discount = plan.monthlyDiscount;
     } else {
       price = plan.yearlyPrice;
-      discount = plan.yearlyDiscount;
+      // discount = plan.yearlyDiscount;
     }
     let totalprice = price;
     if (discount) {

@@ -19,6 +19,9 @@ import { RedisService } from '../redis/redis.service';
 import { URLDto } from './dto/url';
 import { HistoryQueryDto } from './dto/history-query.dto';
 import { ModelUsageFactory } from './services/model-factory.service';
+import { UserService } from '../user/user.service';
+import { UsageTokens } from 'src/common/interfaces/llm-models-strategy.interface';
+import { LlmModels } from 'src/common/enums/llm-models.enum';
 @Injectable()
 export class AiService {
   constructor(
@@ -33,7 +36,7 @@ export class AiService {
     private modelUsageFactory: ModelUsageFactory,
   ) {}
 
-  async getSummary(request: URLDto, userId: string): Promise<any> {
+  async getSummary(request: URLDto, user: User): Promise<any> {
     /**
      * Calls the Python FastAPI endpoint to get a summary.
      */
@@ -61,10 +64,6 @@ export class AiService {
         );
       }
       console.log(videoSummary);
-      // get model usage
-      const agentStrategy = this.modelUsageFactory.getStrategy(
-        videoSummary.llm_model as string,
-      );
       // store video in database for create a session for user
       let videoChatSession = new VideoChatSession();
       videoChatSession.title = videoSummary.video_metadata.title;
@@ -76,7 +75,7 @@ export class AiService {
       videoChatSession.summary = videoSummary.summary;
       videoChatSession.transcript = videoSummary.transcript;
       videoChatSession.summaryInstruction = request.summaryInstruction;
-      videoChatSession.user = { id: userId } as User;
+      videoChatSession.user = { id: user.id } as User;
       videoChatSession =
         await this.videoChatSessionRepository.save(videoChatSession);
       // store transcript in redis to make FastAPI service can access if needed
@@ -85,6 +84,11 @@ export class AiService {
         { transcript: videoSummary.transcript, summary: videoSummary.summary },
         60 * 60 * 3, // 3 hours
       );
+      // calc the price
+      this.calcPrice(user, videoSummary.llm_model as LlmModels, {
+        inputTokens: videoSummary.input_tokens,
+        outputTokens: videoSummary.output_tokens,
+      });
       // process transcript with RAG
       await this.ragService.processVideoTranscript(
         videoChatSession.id,
@@ -114,14 +118,14 @@ export class AiService {
     }
   }
 
-  async askQuestion(question: QuestionDto, userId: string): Promise<any> {
+  async askQuestion(question: QuestionDto, user: User): Promise<any> {
     /**
      * Calls the Python FastAPI endpoint for Q/A
      */
     const { chatId: videoChatSessionId, question: userQuestion } = question;
 
     // check if videoChatSessionId is valid and if this caht for the his owner
-    await this.checkVideoChatSessionForUser(videoChatSessionId, userId);
+    await this.checkVideoChatSessionForUser(videoChatSessionId, user.id);
     const lastFiveMessages = await this.chatMessageRepository.find({
       where: {
         videoChatSessionId,
@@ -160,6 +164,11 @@ export class AiService {
         MessageType.AI,
         response.data.answer as string,
       );
+      this.calcPrice(user, response.data.llm_model as LlmModels, {
+        inputTokens: response.data.input_tokens,
+        outputTokens: response.data.output_tokens,
+      });
+
       return {
         data: {
           answer: {
@@ -281,6 +290,19 @@ export class AiService {
     } as VideoChatSession;
     chatMessage.role = role;
     return await this.chatMessageRepository.save(chatMessage);
+  }
+
+  private calcPrice(
+    user: User,
+    llm: LlmModels,
+    { inputTokens, outputTokens }: UsageTokens,
+  ) {
+    const agentStrategy = this.modelUsageFactory.getStrategy(llm);
+    const credits = agentStrategy.calculateCost({
+      inputTokens,
+      outputTokens,
+    }).creditsUsed;
+    // const subscription =
   }
 }
 // 1. System Improvements & Code Review

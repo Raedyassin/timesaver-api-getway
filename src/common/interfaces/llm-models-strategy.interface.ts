@@ -9,9 +9,10 @@ export interface UsageTokens {
 }
 
 export interface UsageReport {
-  modelName: string;
-  usageTokens: UsageTokens;
-  costUsd: number;
+  // modelName: string;
+  // usageTokens: UsageTokens;
+  // costUsd: number;
+  creditsUsed: number;
 }
 
 export interface IModelStrategy {

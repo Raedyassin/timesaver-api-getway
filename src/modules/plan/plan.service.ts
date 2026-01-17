@@ -108,7 +108,7 @@ export class PlanService {
         plans,
       },
       meta: {
-        total: plans.length,
+        total: plans?.length,
       },
     };
   }

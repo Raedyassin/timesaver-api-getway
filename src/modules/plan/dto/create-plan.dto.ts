@@ -1,11 +1,4 @@
-import {
-  IsBoolean,
-  IsInt,
-  IsNotEmpty,
-  IsString,
-  Max,
-  Min,
-} from 'class-validator';
+import { IsBoolean, IsInt, IsNotEmpty, IsString, Min } from 'class-validator';
 
 export class CreatePlanDto {
   @IsNotEmpty({ message: 'Name is required' })
@@ -19,16 +12,6 @@ export class CreatePlanDto {
   @IsInt({ message: 'Yearly Price must be an integer' })
   @Min(0, { message: 'Yearly Price must be greater than or equal to 0$' })
   yearlyPrice: number;
-
-  @IsInt({ message: 'Monthly Discount must be an integer' })
-  @Min(0, { message: 'Monthly Discount must be greater than or equal to 0' })
-  @Max(100, { message: 'Monthly Discount must be less than or equal to 100' })
-  monthlyDiscount: number;
-
-  @IsInt({ message: 'Yearly Discount must be an integer' })
-  @Min(0, { message: 'Yearly Discount must be greater than or equal to 0' })
-  @Max(100, { message: 'Yearly Discount must be less than or equal to 100' })
-  yearlyDiscount: number;
 
   @IsNotEmpty({ message: 'Description is required' })
   @IsString({ message: 'Description must be a string' })

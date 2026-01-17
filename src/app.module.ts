@@ -18,7 +18,7 @@ import { APP_INTERCEPTOR } from '@nestjs/core';
 import { ResponseInterceptor } from './common/interceptors/global-response.interceptor';
 import { UserRoleGuard } from './common/guards/user-role.guard';
 import { SubscriptionModule } from './modules/subscription/subscription.module';
-import { PaymentModule } from './payment/payment.module';
+import { PaymentModule } from './modules/payment/payment.module';
 import { AiModule } from './modules/ai/ai.module';
 
 @Module({
