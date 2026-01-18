@@ -42,6 +42,14 @@ export class Subscription extends BaseEntityProps {
   @Column({ type: 'timestamp', name: 'next_billing_date', nullable: true })
   nextBillingDate: Date; // When the cycle ends
 
+  // this for yearly subscriptions
+  @Column({
+    type: 'timestamp',
+    name: 'last_credits_reset_at',
+    default: () => 'CURRENT_TIMESTAMP',
+  })
+  lastCreditsResetAt: Date;
+
   @Column({
     type: 'enum',
     enum: SubScriptionStatus,
@@ -62,6 +70,10 @@ export class Subscription extends BaseEntityProps {
   extraCredits: number;
 
   // Optional: Analytics tracking
+  @Column({ type: 'int', name: 'credits_reset_count', default: 0 })
+  extraCreditsResetCount: number; // Tracks how many times credits were reset (optional analytics)
+
+  // Optional: Analytics tracking this for yearly subscriptions
   @Column({ type: 'int', name: 'credits_reset_count', default: 0 })
   creditsResetCount: number; // Tracks how many times credits were reset (optional analytics)
 }

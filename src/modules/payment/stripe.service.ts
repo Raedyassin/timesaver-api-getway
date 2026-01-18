@@ -213,7 +213,7 @@ export class StripePaymentService {
         throw new BadRequestException('No active subscription found');
       }
       subscription.extraCredits += plan.creditsPerMonth;
-      subscription.creditsResetCount += 1;
+      subscription.extraCreditsResetCount += 1;
       await this.subscriptionService.save(subscription);
       this.logger.info(
         `Onetime subscribed user ${userId}, plan id ${planId} with stripe sub id ${stripeSubId} and session id ${sessionId}`,
