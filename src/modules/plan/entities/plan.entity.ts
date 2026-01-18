@@ -1,4 +1,5 @@
 import { BaseEntityProps } from 'src/common/entities/base.entity';
+import { PlanType } from 'src/common/enums/plan.enum';
 import { Subscription } from 'src/modules/subscription/entities/subscription.entity';
 import { Column, Entity, OneToMany } from 'typeorm';
 
@@ -9,6 +10,13 @@ export class Plan extends BaseEntityProps {
 
   @Column('varchar')
   name: string;
+
+  @Column({
+    type: 'enum',
+    enum: PlanType,
+    default: PlanType.SUBSCRIPTION,
+  })
+  planType: PlanType;
 
   @Column({ type: 'float', name: 'monthly_price' })
   monthlyPrice: number;

@@ -8,15 +8,19 @@ import { CheckoutDo } from './dto/checkout.dto';
 export class PaymentController {
   constructor(private readonly stripePaymentService: StripePaymentService) {}
 
-  @Post('checkout')
+  @Post('stripe/checkout')
   async createCheckout(@Body() checkoutDo: CheckoutDo, @GetUser() user: User) {
     return this.stripePaymentService.createCheckoutSession(checkoutDo, user);
   }
 
-  @Post('webhook')
-  webhook(@Req() req, @Headers('stripe-signature') signature: string) {
+  @Post('stripe/webhook')
+  webhook(
+    @Req() req,
+    @Headers('stripe-signature') signature: string,
+  ): Promise<any> {
     return this.stripePaymentService.handleWebhook(
-      req.rawBody as Buffer,
+      // req.rawBody as Buffer,
+      req.body as Buffer,
       signature,
     );
   }

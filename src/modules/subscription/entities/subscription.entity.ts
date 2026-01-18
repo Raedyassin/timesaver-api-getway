@@ -8,7 +8,7 @@ import { User } from 'src/modules/user/entities/user.entity';
 import { Column, Entity, ManyToOne, Index, JoinColumn } from 'typeorm';
 
 @Entity('subscriptions')
-@Index(['userId', 'status']) // CRITICAL: Speeds up "Get Active Subscriptions"
+@Index(['userId', 'status'])
 export class Subscription extends BaseEntityProps {
   @Column({ type: 'uuid' })
   userId: string; // Storing ID is faster/faster index than full object relation
@@ -24,23 +24,22 @@ export class Subscription extends BaseEntityProps {
   @JoinColumn({ name: 'planId' })
   plan: Plan;
 
-  @Column({ nullable: true, unique: true })
+  // Stripe Subscription ID
+  @Column({ name: 'stripe_subscription_id', nullable: true })
   stripeSubscriptionId: string;
 
-  @Column({ type: 'int', default: 0 })
-  creditsUsed: number; // Resets to 0 on new subscription creation
-
-  @Column({ type: 'int', default: 0 })
-  creditsResetCount: number; // Tracks how many times credits were reset (optional analytics)
-
-  @Column({ type: 'enum', enum: SubscriptionType })
+  @Column({ type: 'enum', enum: SubscriptionType, name: 'subscription_type' })
   subscriptionType: SubscriptionType; // monthly or yearly
 
   // Using startDate is better than endDate for history tracking
-  @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
+  @Column({
+    type: 'timestamp',
+    name: 'start_date',
+    default: () => 'CURRENT_TIMESTAMP',
+  })
   startDate: Date;
 
-  @Column({ type: 'timestamp', nullable: true })
+  @Column({ type: 'timestamp', name: 'next_billing_date', nullable: true })
   nextBillingDate: Date; // When the cycle ends
 
   @Column({
@@ -50,6 +49,19 @@ export class Subscription extends BaseEntityProps {
   })
   status: SubScriptionStatus;
 
-  @Column({ type: 'boolean', default: false })
+  @Column({ type: 'boolean', name: 'cancel_at_period_end', default: false })
   cancelAtPeriodEnd: boolean;
+
+  // CREDITS LOGIC
+  // creditsUsed tracks consumption for the CURRENT cycle
+  @Column({ type: 'int', name: 'credits_used', default: 0 })
+  creditsUsed: number;
+
+  // extraCredits tracks Top-Ups (One-time payments)
+  @Column({ type: 'int', name: 'extra_credits', default: 0 })
+  extraCredits: number;
+
+  // Optional: Analytics tracking
+  @Column({ type: 'int', name: 'credits_reset_count', default: 0 })
+  creditsResetCount: number; // Tracks how many times credits were reset (optional analytics)
 }

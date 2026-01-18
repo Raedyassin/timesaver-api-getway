@@ -12,9 +12,9 @@ async function bootstrap() {
   const logger = app.get(LoggerService);
 
   // for stripe webhook run correctly
-  // app.use('/payments/webhook', bodyParser.raw({ type: 'application/json' }));
+  // app.use('/payments/stripe/webhook', bodyParser.raw({ type: 'application/json' }));
   // Because Stripe requires the raw body, not JSON parsed.
-  app.use('/api/v1/payment/webhook', raw({ type: 'application/json' }));
+  app.use('/api/v1/payment/stripe/webhook', raw({ type: 'application/json' }));
 
   app.useGlobalPipes(
     new ValidationPipe({

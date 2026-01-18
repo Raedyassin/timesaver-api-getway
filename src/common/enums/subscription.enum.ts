@@ -6,4 +6,5 @@ export enum SubScriptionStatus {
 export enum SubscriptionType {
   MONTHLY = 'monthly',
   YEARLY = 'yearly',
+  ONETIME = 'one-time',
 }

@@ -1,11 +1,14 @@
 import {
   IsArray,
   IsBoolean,
+  IsEnum,
   IsInt,
   IsNotEmpty,
+  IsOptional,
   IsString,
   Min,
 } from 'class-validator';
+import { PlanType } from 'src/common/enums/plan.enum';
 
 export class CreatePlanDto {
   @IsNotEmpty({ message: 'Name is required' })
@@ -32,6 +35,15 @@ export class CreatePlanDto {
   @IsString({ each: true })
   @IsNotEmpty({ each: true })
   features: string[];
+
+  @IsOptional()
+  @IsNotEmpty({ message: 'Plan Type is required' })
+  @IsEnum({
+    type: PlanType,
+    message:
+      'Plan Type must be one of the following values: subscription, extra',
+  })
+  planType: PlanType = PlanType.SUBSCRIPTION;
 
   @IsBoolean({
     message:
