@@ -19,6 +19,9 @@ export class Plan extends BaseEntityProps {
   @Column('varchar')
   description: string;
 
+  @Column('varchar', { array: true, nullable: true })
+  features: string[];
+
   @Column({ type: 'boolean', default: false })
   custom: boolean;
 

@@ -36,7 +36,7 @@ export class Gemini25FlashLiteStrategy implements IModelStrategy {
       // modelName: this.modelName,
       // usageTokens,
       // costUsd: Number(totalCostUsd.toFixed(6)),
-      creditsUsed: Number(totalCredits.toFixed(1)),
+      creditsUsed: Math.ceil(totalCredits),
     };
   }
 }

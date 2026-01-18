@@ -1,4 +1,4 @@
-import { IsInt, Min } from 'class-validator';
+import { IsBoolean, IsInt, IsOptional, IsString, Min } from 'class-validator';
 import { Type } from 'class-transformer';
 
 export class PlanQueryDto {
@@ -12,11 +12,16 @@ export class PlanQueryDto {
   @Min(10)
   limit: number = 50; // default value
 
-  // @IsOptional()
-  // @IsString()
-  // sort?: string;
+  @IsOptional()
+  @Type(() => Boolean)
+  @IsBoolean()
+  deleted?: boolean = false;
 
-  // @IsOptional()
-  // @IsString()
-  // search?: string;
+  @IsOptional()
+  @IsString()
+  sort?: [string, 'ASC' | 'DESC']; // this is for delatedAt, createdAt, and updatedAt
+
+  @IsOptional()
+  @IsString()
+  search?: string;
 }

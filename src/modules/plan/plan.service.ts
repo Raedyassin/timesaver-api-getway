@@ -34,9 +34,9 @@ export class PlanService {
   }
 
   async findAllForAdmin(query: PlanQueryDto) {
-    const { page, limit } = query;
+    const { page, limit, deleted } = query;
     const plans = await this.planRepository.find({
-      withDeleted: true,
+      withDeleted: deleted,
       skip: (page - 1) * limit,
       take: limit + 1,
     });
@@ -45,7 +45,7 @@ export class PlanService {
         plans: plans.slice(0, limit),
       },
       meta: {
-        total: plans.length,
+        limit,
         page,
         hasNext: plans.length > limit,
         hasPrevious: page > 1,
@@ -86,7 +86,7 @@ export class PlanService {
   }
 
   async remove(id: string, userId: string) {
-    await this.planRepository.softDelete(id);
+    await this.planRepository.delete(id);
     this.logger.info(`Deleted plan by user ${userId}, Plan id ${id}`);
     return {
       message: 'Plan deleted successfully',
@@ -102,6 +102,14 @@ export class PlanService {
       order: {
         createdAt: 'ASC',
       },
+      select: [
+        'id',
+        'name',
+        'monthlyPrice',
+        'yearlyPrice',
+        'description',
+        'features',
+      ],
     });
     return {
       data: {
@@ -116,6 +124,14 @@ export class PlanService {
   async findOne(id: string) {
     const plan = await this.planRepository.findOne({
       where: { id, custom: false },
+      select: [
+        'id',
+        'name',
+        'monthlyPrice',
+        'yearlyPrice',
+        'description',
+        'features',
+      ],
     });
     if (!plan) {
       throw new BadRequestException('Plan not found');
@@ -126,7 +142,6 @@ export class PlanService {
       },
     };
   }
-
   // ************ for internal work ************
   async findPlanById(planId: string) {
     const plan = await this.planRepository.findOneBy({

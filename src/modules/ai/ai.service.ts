@@ -19,9 +19,10 @@ import { RedisService } from '../redis/redis.service';
 import { URLDto } from './dto/url';
 import { HistoryQueryDto } from './dto/history-query.dto';
 import { ModelUsageFactory } from './services/model-factory.service';
-import { UserService } from '../user/user.service';
 import { UsageTokens } from 'src/common/interfaces/llm-models-strategy.interface';
 import { LlmModels } from 'src/common/enums/llm-models.enum';
+import { EmbeddingModels } from 'src/common/enums/embedding-models.enum';
+
 @Injectable()
 export class AiService {
   constructor(
@@ -84,16 +85,23 @@ export class AiService {
         { transcript: videoSummary.transcript, summary: videoSummary.summary },
         60 * 60 * 3, // 3 hours
       );
-      // calc the price
-      this.calcPrice(user, videoSummary.llm_model as LlmModels, {
-        inputTokens: videoSummary.input_tokens,
-        outputTokens: videoSummary.output_tokens,
-      });
       // process transcript with RAG
-      await this.ragService.processVideoTranscript(
+      const embeddingTokens = await this.ragService.processVideoTranscript(
         videoChatSession.id,
         videoSummary.transcript as string,
       );
+      // calc the price
+      this.calcPrice(
+        user,
+        videoSummary.llm_model as LlmModels,
+        EmbeddingModels.TEXT_EMBEDDING,
+        {
+          inputTokens: videoSummary.input_tokens,
+          outputTokens: videoSummary.output_tokens,
+        },
+        embeddingTokens,
+      );
+
       // when user ask for summary we will create a id for his chat
       // so chatId is the id of videoChatSession
       return {
@@ -148,12 +156,13 @@ export class AiService {
         this.httpService.post('/ai/ask-question', {
           video_chat_session_id: videoChatSessionId,
           question: userQuestion,
-          relative_parts_from_transcript: relativePartsFromTranscript,
+          relative_parts_from_transcript:
+            relativePartsFromTranscript.relevantChunks,
           // last few message is the last few user question
           last_few_message: lastFiveMessagesArray.reverse(),
         }),
       );
-
+      const embedingTokens = relativePartsFromTranscript.embeddingTokens;
       await this.createAndSaveChatMessage(
         videoChatSessionId,
         MessageType.USER,
@@ -164,10 +173,16 @@ export class AiService {
         MessageType.AI,
         response.data.answer as string,
       );
-      this.calcPrice(user, response.data.llm_model as LlmModels, {
-        inputTokens: response.data.input_tokens,
-        outputTokens: response.data.output_tokens,
-      });
+      this.calcPrice(
+        user,
+        response.data.llm_model as LlmModels,
+        EmbeddingModels.TEXT_EMBEDDING,
+        {
+          inputTokens: response.data.input_tokens,
+          outputTokens: response.data.output_tokens,
+        },
+        embedingTokens,
+      );
 
       return {
         data: {
@@ -295,12 +310,21 @@ export class AiService {
   private calcPrice(
     user: User,
     llm: LlmModels,
+    embeddingModel: EmbeddingModels,
     { inputTokens, outputTokens }: UsageTokens,
+    embeddingTokens: number,
   ) {
     const agentStrategy = this.modelUsageFactory.getStrategy(llm);
+    const embeddingStrategy =
+      this.modelUsageFactory.getStrategy(embeddingModel);
     const credits = agentStrategy.calculateCost({
       inputTokens,
       outputTokens,
+    }).creditsUsed;
+
+    const embeddingCredits = embeddingStrategy.calculateCost({
+      inputTokens: embeddingTokens,
+      outputTokens: 0,
     }).creditsUsed;
     // const subscription =
   }

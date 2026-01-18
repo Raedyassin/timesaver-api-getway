@@ -2,11 +2,13 @@ import { Injectable, OnModuleInit } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { GoogleGenAI } from '@google/genai';
 import { LoggerService } from 'src/modules/logger/logger.service';
+import { EmbeddingModels } from 'src/common/enums/embedding-models.enum';
 
 @Injectable()
 export class EmbeddingModelService implements OnModuleInit {
   private ai: GoogleGenAI;
-  private readonly embeddingModel = 'text-embedding-004'; //'gemini-embedding-001' or 'text-embedding-004'
+  // the "text-embedding-004" is cost $0.15 per 1M tokens
+  private readonly embeddingModel = EmbeddingModels.TEXT_EMBEDDING;
   constructor(
     private configService: ConfigService,
     private readonly logger: LoggerService,
@@ -22,7 +24,9 @@ export class EmbeddingModelService implements OnModuleInit {
    * are if i embed in antoher langue are teh comparison between them
    * will be occure or what see the file embedding-language.md in the same folder
    */
-  async generateEmbedding(text: string): Promise<number[]> {
+  async generateEmbedding(
+    text: string,
+  ): Promise<{ embeddings: number[]; tokens: number }> {
     try {
       const response = await this.ai.models.embedContent({
         model: this.embeddingModel,
@@ -36,7 +40,10 @@ export class EmbeddingModelService implements OnModuleInit {
         throw new Error('No embeddings found in response');
       }
       // The embedding is an array of numbers
-      return response.embeddings[0].values as number[];
+      return {
+        embeddings: response.embeddings[0].values as number[],
+        tokens: response?.embeddings[0]?.statistics?.tokenCount as number,
+      };
     } catch (error) {
       this.logger.error(`Error generating embedding: ${error.message}`);
       throw error;
@@ -44,15 +51,24 @@ export class EmbeddingModelService implements OnModuleInit {
   }
 
   // for embeddings all of the video chunks at once (if needed)
-  async generateArrayEmbeddings(chunks: string[]): Promise<number[][]> {
+  async generateArrayEmbeddings(
+    chunks: string[],
+  ): Promise<{ embeddings: number[][]; tokens: number }> {
     try {
       const response = await this.ai.models.embedContent({
         model: this.embeddingModel,
         contents: chunks,
       });
-      return response.embeddings?.map(
-        (e) => e.values as number[],
-      ) as number[][];
+      return {
+        embeddings: response.embeddings?.map(
+          (e) => e.values as number[],
+        ) as number[][],
+        tokens: response.embeddings?.reduce(
+          (accumulator, currentValue) =>
+            (currentValue?.statistics?.tokenCount as number) + accumulator,
+          0,
+        ) as number,
+      };
     } catch (error) {
       this.logger.error(`Error generating array embeddings: ${error.message}`);
       throw error;

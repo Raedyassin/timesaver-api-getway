@@ -1,4 +1,11 @@
-import { IsBoolean, IsInt, IsNotEmpty, IsString, Min } from 'class-validator';
+import {
+  IsArray,
+  IsBoolean,
+  IsInt,
+  IsNotEmpty,
+  IsString,
+  Min,
+} from 'class-validator';
 
 export class CreatePlanDto {
   @IsNotEmpty({ message: 'Name is required' })
@@ -20,6 +27,11 @@ export class CreatePlanDto {
   @IsInt({ message: 'Credits Per Month must be an integer' })
   @Min(0, { message: 'Credits Per Month must be greater than or equal to 0' })
   creditsPerMonth: number;
+
+  @IsArray()
+  @IsString({ each: true })
+  @IsNotEmpty({ each: true })
+  features: string[];
 
   @IsBoolean({
     message:

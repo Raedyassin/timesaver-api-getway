@@ -9,16 +9,18 @@ export class RagService {
     private readonly embeddingModelService: EmbeddingModelService,
   ) {}
 
-  private async embedQuestion(question: string) {
-    const embedding =
-      await this.embeddingModelService.generateEmbedding(question);
-    return embedding;
+  private async embedQuestion(question: string): Promise<{
+    embeddings: number[];
+    tokens: number;
+  }> {
+    return await this.embeddingModelService.generateEmbedding(question);
   }
 
-  private async embedingArrayOfChunks(chunks: string[]) {
-    const embeddings =
-      await this.embeddingModelService.generateArrayEmbeddings(chunks);
-    return embeddings;
+  private async embedingArrayOfChunks(chunks: string[]): Promise<{
+    embeddings: number[][];
+    tokens: number;
+  }> {
+    return await this.embeddingModelService.generateArrayEmbeddings(chunks);
   }
 
   // The pinconeService code
@@ -76,9 +78,9 @@ export class RagService {
     sessionId: string,
     chunks: string[],
     startIndex: number,
-  ) {
-    const embeddings = await this.embedingArrayOfChunks(chunks);
-    const vectors = embeddings.map((embedding, i) => ({
+  ): Promise<number> {
+    let embeddings = await this.embedingArrayOfChunks(chunks);
+    const vectors = embeddings.embeddings.map((embedding, i) => ({
       id: `${sessionId}-chunk-${startIndex + i}`,
       text: chunks[i],
       embedding,
@@ -87,37 +89,53 @@ export class RagService {
     await this.insertChunkArrayIntoDB(sessionId, vectors);
 
     // explicit cleanup
-    embeddings.length = 0;
+    embeddings = { embeddings: [], tokens: 0 };
     vectors.length = 0;
+    return embeddings.tokens;
   }
 
   // ************************ pulbic methods ************************
-  async processVideoTranscript(sessionId: string, transcript: string) {
+  async processVideoTranscript(
+    sessionId: string,
+    transcript: string,
+  ): Promise<number> {
     const BATCH_SIZE = 10;
     const batch: string[] = [];
     let chunkIndex = 0;
-
+    let embeddingTokens = 0;
     for (const chunk of this.chunkTranscript(transcript)) {
       batch.push(chunk);
 
       if (batch.length === BATCH_SIZE) {
-        await this.embedAndStoreBatch(sessionId, batch, chunkIndex);
+        embeddingTokens += await this.embedAndStoreBatch(
+          sessionId,
+          batch,
+          chunkIndex,
+        );
         chunkIndex += batch.length;
         batch.length = 0; // free memory
       }
     }
 
     if (batch.length > 0) {
-      await this.embedAndStoreBatch(sessionId, batch, chunkIndex);
+      embeddingTokens += await this.embedAndStoreBatch(
+        sessionId,
+        batch,
+        chunkIndex,
+      );
     }
+    return embeddingTokens;
   }
   async processUserQuestion(videoChatSessionId: string, userQuestion: string) {
-    const questionEmbedding = await this.embedQuestion(userQuestion);
+    const embedding = await this.embedQuestion(userQuestion);
     const relevantChunks = await this.getRelevantChunksFromDB(
       videoChatSessionId,
-      questionEmbedding,
+      embedding.embeddings,
       4,
     );
-    return relevantChunks;
+    return {
+      relevantChunks,
+      embeddingTokens: embedding.tokens,
+    };
   }
 }

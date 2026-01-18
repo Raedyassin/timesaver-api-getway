@@ -1,8 +1,8 @@
-# Pro Scholar Plan(30,000 credits) 
-  1. we will spend 3$ USD on LLM model
-  2. and we will take 6.99 for profit and app services
-  3. and the transcript is free
-  4. 
+> the only model we support it new is gemini 2.5 flash lite
+# Gemini 2.5 flash lite
+  1. $0.1 per 1M token for input 
+  2. $0.4 per 1M token for output
+
 
 
 
