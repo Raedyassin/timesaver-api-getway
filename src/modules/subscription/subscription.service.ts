@@ -76,6 +76,26 @@ export class SubscriptionService {
     );
   }
 
+  async updateSubscriptionCredits(userId: string, credits: number) {
+    const sub = await this.subscriptionRepository.findOne({
+      where: { userId, status: SubScriptionStatus.ACTIVE },
+      order: { createdAt: 'DESC' },
+      relations: ['plan'],
+    });
+    if (!sub) throw new BadRequestException('No active subscription found');
+    sub.creditsUsed += credits;
+    // Don't let them go over (we can make the user if he use his all credits but
+    // we make the request befor check we will let them go this time but next
+    // time we will check(in credits guard))
+    const allUserCredits = sub.plan.creditsPerMonth + sub.extraCredits;
+    if (sub.creditsUsed >= allUserCredits) {
+      sub.creditsUsed = allUserCredits;
+    }
+    await this.subscriptionRepository.update(sub.id, {
+      creditsUsed: sub.creditsUsed,
+    });
+  }
+
   async save(subscription: Subscription) {
     return this.subscriptionRepository.save(subscription);
   }
@@ -83,6 +103,7 @@ export class SubscriptionService {
     return this.subscriptionRepository.findOne({
       where: { userId, status: SubScriptionStatus.ACTIVE },
       order: { createdAt: 'DESC' },
+      relations: ['plan'],
     });
   }
   async findSubscriptionByStripeId(stripeSubId: string) {

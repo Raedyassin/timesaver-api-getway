@@ -210,7 +210,9 @@ export class StripePaymentService {
         this.logger.error(
           `No active subscription found for user ${userId}, plan id ${planId} with stripe sub id ${stripeSubId} and session id ${sessionId} the user pay but there is no active subscription`,
         );
-        throw new BadRequestException('No active subscription found');
+        throw new BadRequestException(
+          'No active subscription found, please subscribe first, to buy extra credits you must have a active subscription',
+        );
       }
       subscription.extraCredits += plan.creditsPerMonth;
       subscription.extraCreditsResetCount += 1;

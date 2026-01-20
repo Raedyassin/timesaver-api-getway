@@ -10,6 +10,7 @@ import { VideoChatSession } from './entities/video-chat-session.entity';
 import { EmbeddingModelService } from './services/embedding.service';
 import { VectorDBService } from './services/vector-db.service';
 import { ModelUsageFactory } from './services/model-factory.service';
+import { SubscriptionModule } from '../subscription/subscription.module';
 
 @Module({
   imports: [
@@ -38,6 +39,7 @@ import { ModelUsageFactory } from './services/model-factory.service';
         // timeout: configService.getOrThrow<number>('AI_SERVICE_TIMEOUT'),
       }),
     }),
+    SubscriptionModule,
   ],
   controllers: [AiController],
   providers: [

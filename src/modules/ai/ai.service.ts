@@ -22,6 +22,7 @@ import { ModelUsageFactory } from './services/model-factory.service';
 import { UsageTokens } from 'src/common/interfaces/llm-models-strategy.interface';
 import { LlmModels } from 'src/common/enums/llm-models.enum';
 import { EmbeddingModels } from 'src/common/enums/embedding-models.enum';
+import { SubscriptionService } from '../subscription/subscription.service';
 
 @Injectable()
 export class AiService {
@@ -35,6 +36,7 @@ export class AiService {
     @InjectRepository(ChatMessage)
     private readonly chatMessageRepository: Repository<ChatMessage>,
     private modelUsageFactory: ModelUsageFactory,
+    private readonly subscriptionService: SubscriptionService,
   ) {}
 
   async getSummary(request: URLDto, user: User): Promise<any> {
@@ -64,7 +66,6 @@ export class AiService {
           'Could not generate summary because transcript is unavailable.',
         );
       }
-      console.log(videoSummary);
       // store video in database for create a session for user
       let videoChatSession = new VideoChatSession();
       videoChatSession.title = videoSummary.video_metadata.title;
@@ -91,7 +92,7 @@ export class AiService {
         videoSummary.transcript as string,
       );
       // calc the price
-      this.calcPrice(
+      const totalCredits = await this.calcPrice(
         user,
         videoSummary.llm_model as LlmModels,
         EmbeddingModels.TEXT_EMBEDDING,
@@ -101,6 +102,10 @@ export class AiService {
         },
         embeddingTokens,
       );
+      console.log('totalCredits', totalCredits);
+      console.log('embeddingTokens', embeddingTokens);
+      console.log('inputTokens', response.data.input_tokens);
+      console.log('outputTokens', response.data.output_tokens);
 
       // when user ask for summary we will create a id for his chat
       // so chatId is the id of videoChatSession
@@ -109,16 +114,17 @@ export class AiService {
           videoMetadata: videoSummary.video_metadata,
           summary: videoSummary.summary,
           chatId: videoChatSession.id,
+          creditsUsed: totalCredits,
         },
       };
     } catch (error) {
-      if (error.response.status === 422) {
+      if (error.response?.status === 422) {
         throw new HttpException(
           'Invalid YouTube URL. Please provide a valid YouTube URL.',
           422,
         );
       }
-      if (error.response.status === 400) {
+      if (error.response?.status === 400) {
         throw new BadRequestException('Video unavailable or restricted.');
       }
       this.logger.error('Error calling AI Service:', String(error));
@@ -162,7 +168,7 @@ export class AiService {
           last_few_message: lastFiveMessagesArray.reverse(),
         }),
       );
-      const embedingTokens = relativePartsFromTranscript.embeddingTokens;
+      const embeddingTokens = relativePartsFromTranscript.embeddingTokens;
       await this.createAndSaveChatMessage(
         videoChatSessionId,
         MessageType.USER,
@@ -173,7 +179,7 @@ export class AiService {
         MessageType.AI,
         response.data.answer as string,
       );
-      this.calcPrice(
+      const totalCredits = await this.calcPrice(
         user,
         response.data.llm_model as LlmModels,
         EmbeddingModels.TEXT_EMBEDDING,
@@ -181,9 +187,8 @@ export class AiService {
           inputTokens: response.data.input_tokens,
           outputTokens: response.data.output_tokens,
         },
-        embedingTokens,
+        embeddingTokens,
       );
-
       return {
         data: {
           answer: {
@@ -191,11 +196,11 @@ export class AiService {
             answer: responseMessage.content,
             createdAt: responseMessage.createdAt,
           },
+          creditsUsed: totalCredits,
         },
       };
     } catch (error) {
-      console.log('error', error.response.data);
-      if (error.response.status === 500 || error.response.status === 422) {
+      if (error.response?.status === 500 || error.response?.status === 422) {
         this.logger.error(
           'Error calling ask-question AI Service:',
           String(error),
@@ -307,7 +312,7 @@ export class AiService {
     return await this.chatMessageRepository.save(chatMessage);
   }
 
-  private calcPrice(
+  private async calcPrice(
     user: User,
     llm: LlmModels,
     embeddingModel: EmbeddingModels,
@@ -315,18 +320,22 @@ export class AiService {
     embeddingTokens: number,
   ) {
     const agentStrategy = this.modelUsageFactory.getStrategy(llm);
-    const embeddingStrategy =
-      this.modelUsageFactory.getStrategy(embeddingModel);
-    const credits = agentStrategy.calculateCost({
+    const llmCredits = agentStrategy.calculateCost({
       inputTokens,
       outputTokens,
     }).creditsUsed;
 
+    const embeddingStrategy =
+      this.modelUsageFactory.getStrategy(embeddingModel);
     const embeddingCredits = embeddingStrategy.calculateCost({
       inputTokens: embeddingTokens,
       outputTokens: 0,
     }).creditsUsed;
-    // const subscription =
+    await this.subscriptionService.updateSubscriptionCredits(
+      user.id,
+      llmCredits + embeddingCredits,
+    );
+    return llmCredits + embeddingCredits;
   }
 }
 // 1. System Improvements & Code Review

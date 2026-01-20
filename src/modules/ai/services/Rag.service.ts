@@ -131,7 +131,7 @@ export class RagService {
     const relevantChunks = await this.getRelevantChunksFromDB(
       videoChatSessionId,
       embedding.embeddings,
-      4,
+      2,
     );
     return {
       relevantChunks,

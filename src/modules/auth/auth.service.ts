@@ -249,7 +249,6 @@ export class AuthService {
       return user;
     }
     // if user not exist then create new user
-    console.log('googleUser', googleUser);
     let newUser = new User();
     newUser.isEmailVerified = true;
     Object.assign(newUser, googleUser);
