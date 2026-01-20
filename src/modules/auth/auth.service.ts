@@ -3,7 +3,7 @@ import { LoggerService } from '../logger/logger.service';
 import { RedisService } from '../redis/redis.service';
 import { UserService } from '../user/user.service';
 import { User } from '../user/entities/user.entity';
-import { CreateCatDto } from './dto/create-user.dto';
+import { CreateUserDto } from './dto/create-user.dto';
 import { comparePassword, hashPassword } from 'src/common/utils/bcrypt.util';
 import { generateCode } from 'src/common/utils/generate-code.util';
 import { ConfigService } from '@nestjs/config';
@@ -18,6 +18,7 @@ import { JwtPayload } from 'src/common/interfaces/jwt-payload.interface';
 import { INewUserVerification } from 'src/common/interfaces/new-user-verification.interface';
 import { LoginUserDto } from './dto/login-user.dto';
 import { ForgotPasswordCodeDto } from './dto/forgot-password.dto';
+import { SubscriptionService } from '../subscription/subscription.service';
 @Injectable()
 export class AuthService {
   constructor(
@@ -27,8 +28,9 @@ export class AuthService {
     private readonly configService: ConfigService,
     private readonly SendMailService: SendMailService,
     private readonly JwtService: JwtService,
+    private readonly subscriptionService: SubscriptionService,
   ) {}
-  async register(user: CreateCatDto) {
+  async register(user: CreateUserDto) {
     if (
       user.password == undefined ||
       user.password == '' ||
@@ -65,7 +67,7 @@ export class AuthService {
           'Email verfication code sent to your email, the code is valid for 10 minutes',
       };
     } catch (error) {
-      this.logger.error(error);
+      this.logger.error(String(error));
     }
   }
   async verifyEmail(emailVerficationCode: EmailVerificationDto) {
@@ -74,7 +76,9 @@ export class AuthService {
         `newUser:${emailVerficationCode.email}`,
       );
     if (!emailVerficationCodeFromRedis) {
-      throw new BadRequestException('Email verfication code is invalid');
+      throw new BadRequestException(
+        'Email verfication code is invalid or expired',
+      );
     }
     const { code, user } = emailVerficationCodeFromRedis;
     if (code !== emailVerficationCode.code) {
@@ -90,8 +94,11 @@ export class AuthService {
       newUser.id.toString(),
       newUser.email,
     );
+    // create free trial subscription
+    await this.subscriptionService.freeTrialSubscription(newUser.id.toString());
     return {
-      message: 'Email verfication code is valid',
+      message:
+        'Email verfication code is valid, and you are now subscribe in free trial plan',
       data: {
         accessToken,
       },
@@ -123,7 +130,7 @@ export class AuthService {
       userData.userName,
       verficationCode,
     );
-    // this.logger.info(`Resend email verfication code to ${email}`);
+    this.logger.info(`Resend email verfication code to ${email}`);
     return {
       message:
         'Email verfication code sent to your email, the code is valid for 10 minutes',
@@ -133,7 +140,7 @@ export class AuthService {
     const isUserFound = await this.userservice.findUserBy({
       email: user.email,
     });
-    if (!isUserFound) {
+    if (!isUserFound || isUserFound.password === null) {
       throw new BadRequestException('Invalid email or password');
     }
     const isPasswordMatch = await comparePassword(
@@ -151,6 +158,7 @@ export class AuthService {
       user.id.toString(),
       user.email,
     );
+
     return {
       data: {
         accessToken,
@@ -231,23 +239,25 @@ export class AuthService {
     this.logger.info(`User ${email} logged in successfully`);
     return this.JwtService.signAsync(payload);
   }
-  async validateGoogleUser(googleUser: CreateCatDto): Promise<User> {
-    console.log(googleUser);
-    console.log(' email', googleUser.email);
-    // add it for testing
-    const user = await this.userservice.findOne({
+
+  async validateGoogleUser(googleUser: CreateUserDto): Promise<User> {
+    const user = await this.userservice.findUserBy({
       email: googleUser.email,
     });
-    console.log(' user', user);
-    // if user already exist then return user
+
     if (user) {
       return user;
     }
     // if user not exist then create new user
+    console.log('googleUser', googleUser);
     let newUser = new User();
     newUser.isEmailVerified = true;
     Object.assign(newUser, googleUser);
     newUser = await this.userservice.saveUser(newUser);
+    await this.subscriptionService.freeTrialSubscription(newUser.id.toString());
+    this.logger.info(
+      `New user ${googleUser.email} with id ${newUser.id} is Created successfully by google OAuth`,
+    );
     return newUser;
   }
 }

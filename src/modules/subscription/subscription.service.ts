@@ -7,8 +7,13 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { Subscription } from './entities/subscription.entity';
 import { Repository } from 'typeorm';
-import { SubScriptionStatus } from 'src/common/enums/subscription.enum';
+import {
+  SubScriptionStatus,
+  SubscriptionType,
+} from 'src/common/enums/subscription.enum';
 import { StripePaymentService } from '../payment/stripe.service';
+import { LoggerService } from '../logger/logger.service';
+import { FREE_PLAN_ID } from 'src/common/enums/plan.enum';
 
 @Injectable()
 export class SubscriptionService {
@@ -17,6 +22,7 @@ export class SubscriptionService {
     private readonly subscriptionRepository: Repository<Subscription>,
     @Inject(forwardRef(() => StripePaymentService))
     private readonly stripeService: StripePaymentService,
+    private readonly logger: LoggerService,
   ) {}
 
   async getActiveSubscription(userId: string) {
@@ -32,10 +38,14 @@ export class SubscriptionService {
     const sub = await this.subscriptionRepository.findOne({
       where: { userId, status: SubScriptionStatus.ACTIVE },
       order: { createdAt: 'DESC' },
+      relations: ['plan'],
     });
 
     if (!sub) throw new BadRequestException('No active subscription found');
 
+    if (sub.plan.id === FREE_PLAN_ID) {
+      throw new BadRequestException('You can not cancel free trial plan');
+    }
     // 2. Call Stripe to Cancel at Period End
     // This ensures we don't charge them again
     await this.stripeService.cancelAtPeriodEnd(sub.stripeSubscriptionId);
@@ -52,6 +62,20 @@ export class SubscriptionService {
     };
   }
 
+  async freeTrialSubscription(userId: string) {
+    const sub = new Subscription();
+    sub.userId = userId;
+    // we should create a free trial plan
+    sub.planId = FREE_PLAN_ID;
+    sub.subscriptionType = SubscriptionType.ONETIME;
+    sub.nextBillingDate = new Date();
+    sub.nextBillingDate.setMonth(sub.nextBillingDate.getMonth() + 1);
+    await this.subscriptionRepository.save(sub);
+    this.logger.info(
+      `User ${userId} subscribed for free trial plan, id ${sub.planId}`,
+    );
+  }
+
   async save(subscription: Subscription) {
     return this.subscriptionRepository.save(subscription);
   }
@@ -66,5 +90,15 @@ export class SubscriptionService {
       where: { stripeSubscriptionId: stripeSubId },
       order: { createdAt: 'DESC' },
     });
+  }
+
+  /** *****************************  admin ***************************** */
+  async getAllSubscriptions() {
+    const subs = await this.subscriptionRepository.find();
+    return {
+      data: {
+        subscriptions: subs,
+      },
+    };
   }
 }

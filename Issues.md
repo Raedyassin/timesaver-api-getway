@@ -18,6 +18,10 @@
 ### Effects
   1. when user is delete his account and resignup again the system will don't create this accoutn because this email is unique in database
   
+
+# Solved Problem
+
 ## singup by email
 ### description
   when user is singup by his email and try to singup or login py google account the system is create a new user(this is the issues)
+  > solution i found i make the email in email/pass way is incorrect like raedwork24@gamil.com and in google AOuth i use raedwork24@gmaill.com so it create and new user then how you get the verfication code in "raedwork24@gamil.com" 😅😅😅 i'm node mailer when send email send me an email so i see the vrefication code

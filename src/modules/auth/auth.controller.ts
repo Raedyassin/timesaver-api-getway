@@ -8,7 +8,7 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
-import { CreateCatDto } from './dto/create-user.dto';
+import { CreateUserDto } from './dto/create-user.dto';
 import {
   EmailVerificationDto,
   ResendEmailVerificationCodeDto,
@@ -29,7 +29,7 @@ export class AuthController {
 
   @Public()
   @Post('register')
-  register(@Body() user: CreateCatDto) {
+  register(@Body() user: CreateUserDto) {
     return this.authService.register(user);
   }
 

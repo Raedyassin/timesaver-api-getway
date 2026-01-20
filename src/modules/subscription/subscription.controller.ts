@@ -2,6 +2,8 @@ import { Body, Controller, Get, Post } from '@nestjs/common';
 import { SubscriptionService } from './subscription.service';
 import { GetUser } from 'src/common/decorators/get-user.decorator';
 import { User } from '../user/entities/user.entity';
+import { UserRoles } from 'src/common/decorators/user-role.decorator';
+import { Roles } from 'src/common/enums/role.enum';
 
 @Controller('sub')
 export class SubscriptionController {
@@ -28,5 +30,12 @@ export class SubscriptionController {
      * DB Update: Set status = CANCELLED. User loses access.
      */
     return this.subscriptionService.cancelSubscription(user.id.toString());
+  }
+
+  /** *****************************  admin ***************************** */
+  @Get('all')
+  @UserRoles(Roles.ADMIN)
+  async getAllSubscriptions() {
+    return this.subscriptionService.getAllSubscriptions();
   }
 }

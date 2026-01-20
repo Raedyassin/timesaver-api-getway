@@ -43,7 +43,7 @@ export class CreatePlanDto {
     message:
       'Plan Type must be one of the following values: subscription, extra',
   })
-  planType: PlanType = PlanType.SUBSCRIPTION;
+  planType: PlanType;
 
   @IsBoolean({
     message:

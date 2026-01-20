@@ -2,9 +2,10 @@ import { BaseEntityProps } from 'src/common/entities/base.entity';
 import { Roles } from 'src/common/enums/role.enum';
 import { VideoChatSession } from 'src/modules/ai/entities/video-chat-session.entity';
 import { Subscription } from 'src/modules/subscription/entities/subscription.entity';
-import { Entity, Column, OneToMany } from 'typeorm';
+import { Entity, Column, OneToMany, Index } from 'typeorm';
 
 @Entity('users')
+@Index(['email'], { unique: true })
 export class User extends BaseEntityProps {
   @OneToMany(() => Subscription, (subscription) => subscription.user)
   subscription: Subscription[];
@@ -18,7 +19,7 @@ export class User extends BaseEntityProps {
   @Column({ type: 'enum', enum: Roles, default: Roles.USER })
   role: Roles;
 
-  @Column({ unique: true })
+  @Column()
   email: string;
 
   @Column({ default: false, type: 'boolean', name: 'is_email_verified' })

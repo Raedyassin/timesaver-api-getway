@@ -70,7 +70,7 @@ export class Subscription extends BaseEntityProps {
   extraCredits: number;
 
   // Optional: Analytics tracking
-  @Column({ type: 'int', name: 'credits_reset_count', default: 0 })
+  @Column({ type: 'int', name: 'extra_credits_reset_count', default: 0 })
   extraCreditsResetCount: number; // Tracks how many times credits were reset (optional analytics)
 
   // Optional: Analytics tracking this for yearly subscriptions

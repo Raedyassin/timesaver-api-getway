@@ -15,6 +15,7 @@ export class Plan extends BaseEntityProps {
     type: 'enum',
     enum: PlanType,
     default: PlanType.SUBSCRIPTION,
+    name: 'plan_type',
   })
   planType: PlanType;
 

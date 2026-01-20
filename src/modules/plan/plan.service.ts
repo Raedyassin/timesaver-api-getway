@@ -6,6 +6,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Plan } from './entities/plan.entity';
 import { Repository } from 'typeorm';
 import { PlanQueryDto } from './dto/plan-query.dto';
+import { FREE_PLAN_ID } from 'src/common/enums/plan.enum';
 
 @Injectable()
 export class PlanService {
@@ -86,6 +87,9 @@ export class PlanService {
   }
 
   async remove(id: string, userId: string) {
+    if (id === FREE_PLAN_ID) {
+      throw new BadRequestException('You can not delete free trial plan');
+    }
     await this.planRepository.delete(id);
     this.logger.info(`Deleted plan by user ${userId}, Plan id ${id}`);
     return {

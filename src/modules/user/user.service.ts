@@ -10,6 +10,17 @@ export class UserService {
     private readonly usersRepository: Repository<User>,
   ) {}
 
+  async findAll() {
+    const users = await this.usersRepository.find({
+      withDeleted: true, // Include deleted users
+    });
+    return {
+      data: {
+        users,
+      },
+    };
+  }
+
   findUserBy(query: Record<string, any>): Promise<User | null> {
     return this.usersRepository.findOneBy(query);
   }
